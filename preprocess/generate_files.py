@@ -64,15 +64,16 @@ def generate_files(kg_data):
     # filter rows with ':Drug' in '_labels'
     drugs_filtered = kg_data[kg_data['_labels'].isin([':Drug'])][['drugID', 'atcClassification']]
     drug_hierarchy = generate_drug_hierarchy(drugs_filtered)
+    drug_hierarchy.to_csv('hierarchy.csv', sep=",", index = False)
 
     # filter rows with ':Drug' in '_labels'
     diseases_filtered = kg_data[kg_data['_labels'].isin([':Disease'])][['diseaseID', 'class']]
     disease_hierarchy = generate_disease_hierarchy(diseases_filtered)
 
     # writing the merged hierarchy to a csv file
-    hierarchy_frames = [drug_hierarchy, disease_hierarchy]
-    hierarchy_result = pd.concat(hierarchy_frames)
-    hierarchy_result.to_csv('hierarchy.csv', sep=",", index = False)
+    #hierarchy_frames = [drug_hierarchy, disease_hierarchy]
+    #hierarchy_result = pd.concat(hierarchy_frames)
+    #hierarchy_result.to_csv('hierarchy.csv', sep=",", index = False)
     print("Hierarchy file is saved!")
 
     ## generate drug-disease association file
@@ -91,23 +92,24 @@ def generate_files(kg_data):
     # existing drug_disease pairs
     existing_pairs = set(zip(dda_df['drug'], dda_df['disease']))
 
-    # Create a new DataFrame with 660 rows and label 0
-    new_rows = []
-    while len(new_rows) < len(dda_df):
-        new_drug = np.random.choice(dda_df['drug'])
-        new_disease = np.random.choice(dda_df['disease'])
-        new_pair = (new_drug, new_disease)
-        
-        if new_pair not in existing_pairs:
-            new_rows.append({'drug': new_drug, 'disease': new_disease, 'label': 0})
-            # Append the new pair to existing pairs
-            existing_pairs.add((new_drug, new_disease))    
+    for i in range(1, 11):
+    # Create a new DataFrame with equal number of rows from disconnected pairs but with label 0
+        new_rows = []
+        while len(new_rows) < len(dda_df):
+            new_drug = np.random.choice(drugs_filtered['drugID'])
+            new_disease = np.random.choice(diseases_filtered['diseaseID'])
+            new_pair = (new_drug, new_disease)
+            
+            if new_pair not in existing_pairs:
+                new_rows.append({'drug': new_drug, 'disease': new_disease, 'label': 0})
+                # Append the new pair to existing pairs
+                existing_pairs.add((new_drug, new_disease))
 
-    # Concatenate the new rows to the original DataFrame
-    dda_complete_df = pd.concat([dda_df, pd.DataFrame(new_rows)], ignore_index=True)
+        # Concatenate the new rows to the original DataFrame
+        dda_complete_df = pd.concat([dda_df, pd.DataFrame(new_rows)], ignore_index=True)
 
-    dda_complete_df.to_csv('dda.tsv', sep="\t", index = False)
-    print("Drug-Disease association file is saved!")
+        dda_complete_df.to_csv('dda_files/dda' + str(i) + '.tsv', sep="\t", index = False)
+        print("Drug-Disease association file is saved!")
 
 # function to map _id to the corresponding identifier based on _labels
 def map_id(row):
