@@ -71,13 +71,19 @@ def save_dis_sim(kgfile, sim_file):
                 similarity = jaccard_similarity(genes1, genes2)
                 disease_similarity_matrix.setdefault(disease1, {})[disease2] = similarity
 
-    sim_graph = pd.read_csv(sim_file, sep="\t")
-
     print('Similarities are being written...')
+    colnames = ['a', 'b', 'c', 'd', 'e'] 
+    sim_graph = pd.read_csv(sim_file, names=colnames, sep="\t")
+    data = []
+    count = len(sim_graph.index)    
     for key, value in disease_similarity_matrix.items():
         for key2, value2 in value.items():
-            if value2 > 0:
-                sim_graph.loc[len(sim_graph.index)] = [key, key2, 2, value2, len(sim_graph.index)] 
+            if value2 > 0.4:
+                data.append([key, key2, 3, value2, count] )
+                count = count + 1
 
-    sim_graph.to_csv(sim_file, sep="\t", index = False, header = False)             
+    df = pd.DataFrame(data, columns = ['a', 'b', 'c', 'd', 'e']) 
+    sim_graph =  pd.concat([sim_graph, df], ignore_index=True, sort=False)                
+
+    sim_graph.to_csv(sim_file, sep="\t", index = False, header = False)
     
